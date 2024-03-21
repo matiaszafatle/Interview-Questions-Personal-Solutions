@@ -1,0 +1,21 @@
+Assume you're given a table containing information about Wayfair user transactions for different products. Write a query to calculate the year-on-year growth rate for the total spend of each product, grouping the results by product ID.
+
+The output should include the year in ascending order, product ID, current year's spend, previous year's spend and year-on-year growth percentage, rounded to 2 decimal places.
+
+- My Solution:
+    WITH cte_YoY_Growth AS(
+      SELECT
+      EXTRACT(YEAR FROM transaction_date) AS year,
+      product_id,
+      SUM(spend) OVER(PARTITION BY product_id,EXTRACT(YEAR FROM transaction_date)
+              ORDER BY EXTRACT(YEAR FROM transaction_date)) AS current_year_spend
+      FROM user_transactions
+    ORDER BY   
+     product_id,EXTRACT(YEAR FROM transaction_date))
+    SELECT
+      year,
+      product_id,
+      current_year_spend,
+      LAG(current_year_spend,1) OVER(PARTITION BY product_id ORDER BY year) AS prev_year_spend,
+      ROUND(100 * ((current_year_spend / LAG(current_year_spend,1) OVER(PARTITION BY product_id ORDER BY year)) -1 ),2) AS yoy_rate
+    FROM cte_YoY_Growth;
